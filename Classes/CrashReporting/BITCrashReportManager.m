@@ -167,6 +167,7 @@
     }
     
     _settingsFile = [[_crashesDir stringByAppendingPathComponent:HOCKEYSDK_SETTINGS] retain];
+	[self loadSettings];
       
     // on the very first startup this will always be initialized, since the default value for _crashReportActivated is YES
     // but we do it anyway, to be able to initialize PLCrashReporter as early as possible
@@ -219,8 +220,8 @@
   NSString *error = nil;
 
   NSMutableDictionary *rootObj = [NSMutableDictionary dictionaryWithCapacity:4];
-  [rootObj setObject:_userName forKey:kHockeySDKUserName];
-  [rootObj setObject:_userEmail forKey:kHockeySDKUserEmail];
+  if(_userName) [rootObj setObject:_userName forKey:kHockeySDKUserName];
+  if(_userEmail) [rootObj setObject:_userEmail forKey:kHockeySDKUserEmail];
   if (_approvedCrashReports && [_approvedCrashReports count] > 0)
     [rootObj setObject:_approvedCrashReports forKey:kHockeySDKApprovedCrashReports];
   [rootObj setObject:[NSNumber numberWithBool:_analyzerStarted] forKey:kHockeySDKAnalyzerStarted];
@@ -253,8 +254,8 @@
     if ([rootObj objectForKey:kHockeySDKApprovedCrashReports])
       [_approvedCrashReports setDictionary:[rootObj objectForKey:kHockeySDKApprovedCrashReports]];
     _analyzerStarted = [(NSNumber *)[rootObj objectForKey:kHockeySDKAnalyzerStarted] boolValue];
-    _userName = [rootObj objectForKey:kHockeySDKUserName] ?: @"";
-    _userEmail = [rootObj objectForKey:kHockeySDKUserEmail] ?: @"";
+    _userName = [[rootObj objectForKey:kHockeySDKUserName] retain] ?: @"";
+    _userEmail = [[rootObj objectForKey:kHockeySDKUserEmail] retain] ?: @"";
   } else {
     HockeySDKLog(@"ERROR: Reading settings. %@", error);
   }
@@ -441,7 +442,9 @@
     NSError* error = nil;
     NSString *crashReport = nil;
     
-    NSString *crashFile = [_crashFiles lastObject];
+	NSMutableSet *unapprovedReports = [NSMutableSet setWithArray:_crashFiles];
+	[unapprovedReports minusSet:[NSSet setWithArray:[_approvedCrashReports allKeys]]];
+    NSString *crashFile = [[unapprovedReports allObjects] lastObject];
     NSData *crashData = [NSData dataWithContentsOfFile: crashFile];
     PLCrashReport *report = [[[PLCrashReport alloc] initWithData:crashData error:&error] autorelease];
     crashReport = [BITCrashReportTextFormatter stringValueForCrashReport:report];
@@ -454,6 +457,11 @@
       }
       
       if (!self.autoSubmitCrashReport && [self hasNonApprovedCrashReports]) {
+		[[[NSClassFromString(@"FeedbackReporter") alloc] performSelector:@selector(initWithCrashLog:) withObject:crashReport] autorelease];
+		[_approvedCrashReports setObject:[NSNumber numberWithBool:YES] forKey:crashFile];
+		[self saveSettings];
+
+/*
         _crashReportUI = [[BITCrashReportUI alloc] initWithManager:self
                                                    crashReportFile:crashFile
                                                        crashReport:crashReport
@@ -466,6 +474,7 @@
         [_crashReportUI setUserEmail:_userEmail];
         
         [_crashReportUI askCrashReportDetails];
+*/
       } else {
         [self sendReportWithCrash:crashReport crashDescription:nil];
       }

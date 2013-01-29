@@ -54,13 +54,13 @@
 
 
 // hockey api error domain
-typedef enum {
-  HockeyErrorUnknown,
-  HockeyAPIAppVersionRejected,
-  HockeyAPIReceivedEmptyResponse,
-  HockeyAPIErrorWithStatusCode
-} HockeyErrorReason;
-static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
+//typedef enum {
+//  HockeyErrorUnknown,
+//  HockeyAPIAppVersionRejected,
+//  HockeyAPIReceivedEmptyResponse,
+//  HockeyAPIErrorWithStatusCode
+//} HockeyErrorReason;
+//static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
 
 
 typedef enum HockeyCrashAlertType {

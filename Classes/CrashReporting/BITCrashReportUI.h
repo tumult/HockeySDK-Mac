@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Kent Sutherland
  *
- * Copyright (c) 2012 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011 Andreas Linde & Kent Sutherland.
  * All rights reserved.
  *
@@ -30,7 +30,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@class BITCrashReportManager;
+@class BITCrashManager;
 
 @interface BITCrashReportUI : NSWindowController {
   IBOutlet NSTextField  *nameTextField;
@@ -53,7 +53,9 @@
   IBOutlet NSButton   *cancelButton;
   IBOutlet NSButton   *submitButton;
   
-  BITCrashReportManager   *_crashReportManager;
+  NSMenu              *_mainAppMenu;
+  
+  BITCrashManager   *_crashManager;
   
   NSString      *_companyName;
   NSString      *_applicationName;
@@ -76,7 +78,7 @@
 @property (nonatomic, retain) NSString *userEmail;
 
 
-- (id)initWithManager:(BITCrashReportManager *)crashReportManager crashReportFile:(NSString *)crashReportFile crashReport:(NSString *)crashReport logContent:(NSString *)logContent companyName:(NSString *)companyName applicationName:(NSString *)applicationName askUserDetails:(BOOL)askUserDetails;
+- (instancetype)initWithManager:(BITCrashManager *)crashManager crashReportFile:(NSString *)crashReportFile crashReport:(NSString *)crashReport logContent:(NSString *)logContent companyName:(NSString *)companyName applicationName:(NSString *)applicationName askUserDetails:(BOOL)askUserDetails;
 
 - (void)askCrashReportDetails;
 

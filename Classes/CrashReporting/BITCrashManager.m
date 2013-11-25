@@ -58,6 +58,10 @@
 
 NSString *const kHockeyErrorDomain = @"HockeyErrorDomain";
 
+// needed to silence undeclared selector warning
+@protocol FeedbackReporter <NSObject>
+- (id)initWithCrashLog:(NSString *)crashLog;
+@end
 
 @implementation BITCrashManager
 
@@ -538,17 +542,23 @@ NSString *const kHockeyErrorDomain = @"HockeyErrorDomain";
     NSError* error = nil;
     NSString *crashReport = nil;
     
-    NSString *crashFile = [_crashFiles lastObject];
+    NSMutableSet *unapprovedReports = [NSMutableSet setWithArray:_crashFiles];
+    [unapprovedReports minusSet:[NSSet setWithArray:[_approvedCrashReports allKeys]]];
+    NSString *crashFile = [[unapprovedReports allObjects] lastObject];
     NSData *crashData = [NSData dataWithContentsOfFile: crashFile];
     BITPLCrashReport *report = [[[BITPLCrashReport alloc] initWithData:crashData error:&error] autorelease];
     NSString *installString = [BITSystemProfile deviceIdentifier] ?: @"";
     crashReport = [BITCrashReportTextFormatter stringValueForCrashReport:report crashReporterKey:installString];
     
     if (crashReport && !error) {
-      NSString *log = [_dictOfLastSessionCrash valueForKey:kBITCrashMetaApplicationLog] ?: @"";
+      //NSString *log = [_dictOfLastSessionCrash valueForKey:kBITCrashMetaApplicationLog] ?: @"";
       
       if (!self.autoSubmitCrashReport && [self hasNonApprovedCrashReports]) {
-        
+        [[[NSClassFromString(@"FeedbackReporter") alloc] performSelector:@selector(initWithCrashLog:) withObject:crashReport] autorelease];
+        [_approvedCrashReports setObject:[NSNumber numberWithBool:YES] forKey:crashFile];
+        [self saveSettings];
+		
+		/*
         if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillShowSubmitCrashReportAlert:)]) {
           [self.delegate crashManagerWillShowSubmitCrashReportAlert:self];
         }
@@ -565,6 +575,7 @@ NSString *const kHockeyErrorDomain = @"HockeyErrorDomain";
         [_crashReportUI setUserEmail:[self userEmailForCrashReport]];
         
         [_crashReportUI askCrashReportDetails];
+		*/
       } else {
         [self sendReportWithCrash:crashFile crashDescription:nil];
       }
@@ -647,7 +658,7 @@ NSString *const kHockeyErrorDomain = @"HockeyErrorDomain";
         NSLog(@"[HockeySDK] ERROR: Exception handler could not be set. Make sure there is no other exception handler set up!");
       }
     } else {
-      NSLog(@"[HockeySDK] WARNING: Detecting crashes is NOT enabled due to running the app with a debugger attached.");
+      //NSLog(@"[HockeySDK] WARNING: Detecting crashes is NOT enabled due to running the app with a debugger attached.");
     }
   }
   
